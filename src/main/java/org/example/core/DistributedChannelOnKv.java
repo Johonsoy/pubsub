@@ -1,5 +1,17 @@
 package org.example.core;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.example.storage.KvInterface;
+import org.example.storage.LongOnKv;
+import org.example.utils.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class DistributedChannelOnKv<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(DistributedChannelOnKv.class);
     private static final int MIN_RESERVED_COUNT = 64;
@@ -77,7 +89,7 @@ public class DistributedChannelOnKv<T> {
             LongOnKv version,
             Subscriber.Handler<T> subscriberHandler,
             Set<String> topics) {
-        return createSubscriber(new ReceivedVersion.DIStoreVersion(version), subscriberHandler, topics);
+        return createSubscriber(new SeverKVVersion(version), subscriberHandler, topics);
     }
 
     public Subscriber<T> createInMemorySubscriber(
@@ -86,7 +98,7 @@ public class DistributedChannelOnKv<T> {
             Set<String> topics) {
         long startVersion = consumeHistory ? appendLog.getStartVersion() - 1 : appendLog.getEndVersion();
         Subscriber<T> subscriber = new Subscriber<>(
-                new ReceivedVersion.InMemoryVersion(startVersion),
+                new InMemoryVersion(startVersion),
                 subscribeHandler,
                 topics);
         subscriberMap.put(subscriber.getId(), subscriber);
@@ -167,7 +179,7 @@ public class DistributedChannelOnKv<T> {
                 .distinct()
                 .sorted()
                 .toList();
-        List<Pair<Long, Long>> pushGroups = Lists.newArrayList();
+        List<Pair<Long, Long>> pushGroups = new ArrayList<>();
         for (int i = 0; i < pushedVersions.size(); i++) {
             if (i < pushedVersions.size() - 1) {
                 pushGroups.add(Pair.of(pushedVersions.get(i) + 1, pushedVersions.get(i + 1)));

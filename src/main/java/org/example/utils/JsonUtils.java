@@ -1,5 +1,10 @@
 package org.example.utils;
 
+import org.example.core.DistributedChannelOnKv;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
 public class JsonUtils {
 
     public static byte[] jsonBytes(DistributedChannelOnKv.PubData obj) {
