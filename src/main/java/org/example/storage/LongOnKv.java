@@ -1,5 +1,8 @@
 package org.example.storage;
 
+import org.example.core.AppendEntry;
+import org.example.utils.JsonUtils;
+
 public class LongOnKv {
     private final KvInterface kv;
     private final String key;
@@ -16,5 +19,10 @@ public class LongOnKv {
 
     public void set(long value) {
         kv.set(key, String.valueOf(value).getBytes());
+    }
+
+    public boolean compareAndSet(long lastVersion, long nextVersion) {
+        return kv.compareAndSet(key, JsonUtils.longToBytes(lastVersion),
+                JsonUtils.longToBytes(nextVersion));
     }
 }

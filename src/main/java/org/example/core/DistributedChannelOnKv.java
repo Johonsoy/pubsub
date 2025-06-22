@@ -54,7 +54,7 @@ public class DistributedChannelOnKv<T> {
             long currentTime = System.currentTimeMillis();
             String leaseValue = nodeId + ":" + (currentTime + 10000);
 
-            if (kv.setIfAbsent(leaderKey, leaseValue.getBytes(), 10)) {
+            if (kv.setIfAbsent(leaderKey, leaseValue.getBytes())) {
                 isLeader.set(true);
                 LOGGER.info("节点 {} 成为领导者", nodeId);
             } else {
@@ -62,7 +62,7 @@ public class DistributedChannelOnKv<T> {
                 if (currentLeader != null) {
                     String[] parts = new String(currentLeader).split(":");
                     if (parts.length == 2 && Long.parseLong(parts[1]) < currentTime) {
-                        if (kv.compareAndSet(leaderKey, currentLeader, leaseValue.getBytes(), 10)) {
+                        if (kv.compareAndSet(leaderKey, currentLeader, leaseValue.getBytes())) {
                             isLeader.set(true);
                             LOGGER.info("节点 {} 接管领导者角色", nodeId);
                         }
