@@ -11,10 +11,9 @@ import org.slf4j.LoggerFactory;
 public class KvHttpServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(KvHttpServer.class);
     private final Server server;
-    private final KvInterface kv;
 
     public KvHttpServer(int port) {
-        this.kv = new InMemoryKv();
+        KvInterface kv = new InMemoryKv();
         this.server = new Server(port);
 
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);

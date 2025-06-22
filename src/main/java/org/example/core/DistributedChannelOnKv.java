@@ -1,5 +1,6 @@
 package org.example.core;
 
+import lombok.Getter;
 import org.apache.commons.lang3.tuple.Pair;
 import org.example.storage.KvInterface;
 import org.example.storage.LongOnKv;
@@ -286,6 +287,7 @@ public class DistributedChannelOnKv<T> {
 
     private static class DistributedLog {
         private final KvInterface kv;
+        @Getter
         private final String prefix;
 
         public DistributedLog(KvInterface kv, String prefix) {
@@ -335,11 +337,5 @@ public class DistributedChannelOnKv<T> {
             }
         }
 
-        public String getPrefix() {
-            return prefix;
-        }
     }
-
-    // 主程序：演示使用
-
 }
