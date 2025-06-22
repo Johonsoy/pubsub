@@ -72,7 +72,9 @@ public class AppendLog {
             if (lastVersion >= nextVersion) {
                 return;
             }
-            if (lastPublished.compareAndSet(lastVersion, nextVersion));
+            if (lastPublished.compareAndSet(lastVersion, nextVersion)) {
+                return;
+            }
         }
     }
 
