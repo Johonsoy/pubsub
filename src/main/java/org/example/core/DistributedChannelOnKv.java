@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class DistributedChannelOnKv<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(DistributedChannelOnKv.class);
     private static final int MIN_RESERVED_COUNT = 64;
-    private final DistributedLog appendLog;
+    private final AppendLog appendLog;
     private final Map<String, Subscriber<T>> subscriberMap = new ConcurrentHashMap<>();
     private final long maxReservedSeconds;
     private final AtomicBoolean isLeader = new AtomicBoolean(false);
@@ -34,7 +34,7 @@ public class DistributedChannelOnKv<T> {
         this.kv = kv;
         this.keyPrefix = keyPrefix;
         this.maxReservedSeconds = maxReservedSeconds;
-        this.appendLog = new DistributedLog(kv, keyPrefix);
+        this.appendLog = new AppendLog(kv, keyPrefix);
 
         this.pushFuture = executorService.scheduleWithFixedDelay(
                 this::safePush, 0, checkIntervalMillis, TimeUnit.MILLISECONDS);
@@ -283,59 +283,5 @@ public class DistributedChannelOnKv<T> {
 
     public AtomicBoolean isLeader() {
         return this.isLeader;
-    }
-
-    private static class DistributedLog {
-        private final KvInterface kv;
-        @Getter
-        private final String prefix;
-
-        public DistributedLog(KvInterface kv, String prefix) {
-            this.kv = kv;
-            this.prefix = prefix;
-        }
-
-        public long append(byte[] data) {
-            long version = kv.increment(prefix + ":version");
-            kv.set(prefix + ":log:" + version, data);
-            return version;
-        }
-
-        public long getStartVersion() {
-            return 1;
-        }
-
-        public long getEndVersion() {
-            byte[] version = kv.get(prefix + ":version");
-            return version != null ? Long.parseLong(new String(version)) : 0;
-        }
-
-        public Iterator<Pair<Long, byte[]>> iterator() {
-            return iterator(getStartVersion());
-        }
-
-        public Iterator<Pair<Long, byte[]>> iterator(long fromVersion) {
-            return new Iterator<>() {
-                long current = fromVersion;
-
-                @Override
-                public boolean hasNext() {
-                    return current <= getEndVersion();
-                }
-
-                @Override
-                public Pair<Long, byte[]> next() {
-                    byte[] data = kv.get(prefix + ":log:" + current);
-                    return Pair.of(current++, data);
-                }
-            };
-        }
-
-        public void deleteTo(long version) {
-            for (long i = getStartVersion(); i <= version; i++) {
-                kv.delete(prefix + ":log:" + i);
-            }
-        }
-
     }
 }
