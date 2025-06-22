@@ -3,6 +3,7 @@ package org.example.core;
 import lombok.Getter;
 import org.apache.commons.lang3.tuple.Pair;
 import org.example.storage.KvInterface;
+import org.example.storage.LongOnKv;
 
 import java.util.Iterator;
 
@@ -12,10 +13,18 @@ public class AppendLog {
     @Getter
     private final String prefix;
 
+    private final LongOnKv nextVersion;
+    private final LongOnKv lastPublished;
+
+    private final LongOnKv firstVersion;
+
+
     public AppendLog(KvInterface kv, String prefix) {
         this.kv = kv;
         this.prefix = prefix;
-    }
+        this.nextVersion = new LongOnKv(kv, prefix + ":version");
+        this.lastPublished = new LongOnKv(kv, prefix + ":lastPublished");
+        this.firstVersion = new LongOnKv(kv, prefix + ":firstVersion");    }
 
     public long append(byte[] data) {
         long version = kv.increment(prefix + ":version");
@@ -28,7 +37,7 @@ public class AppendLog {
     }
 
     public long getEndVersion() {
-        byte[] version = kv.get(prefix + ":version");
+        byte[] version = kv.get(prefix + ":lastPublished");
         return version != null ? Long.parseLong(new String(version)) : 0;
     }
 
