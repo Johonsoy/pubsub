@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-class InMemoryKv implements KvInterface {
+public class InMemoryKv implements KvInterface {
     private final ConcurrentMap<String, byte[]> store = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Long> ttlMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, AtomicLong> counters = new ConcurrentHashMap<>();

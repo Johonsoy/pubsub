@@ -1,18 +1,19 @@
 package org.example.utils;
 
 import org.example.core.DistributedChannelOnKv;
+import org.example.core.PubData;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 public class JsonUtils {
 
-    public static byte[] jsonBytes(DistributedChannelOnKv.PubData obj) {
+    public static byte[] jsonBytes(PubData pubData) {
         String json = String.format("%s|%s|%d|%s",
-                obj.topic(),
-                Base64.getEncoder().encodeToString(obj.data()),
-                obj.timestamp(),
-                obj.address());
+                pubData.getTopic(),
+                Base64.getEncoder().encodeToString(pubData.getData()),
+                pubData.getTimestamp(),
+                pubData.getTopic());
         return json.getBytes(StandardCharsets.UTF_8);
     }
 

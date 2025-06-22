@@ -138,16 +138,16 @@ public class DistributedChannelOnKv<T> {
         while (iterator.hasNext() && !needPush.isEmpty()) {
             Pair<Long, byte[]> pair = iterator.next();
             PubData pubData = PubData.unmarshal(pair.getValue());
-            if (!needPush.values().stream().anyMatch(s -> s.getTopics().contains(pubData.topic))) {
+            if (!needPush.values().stream().anyMatch(s -> s.getTopics().contains(pubData.getTopic()))) {
                 continue;
             }
-            T obj = unmarshal(pubData.data);
+            T obj = unmarshal(pubData.getData());
             Iterator<Subscriber<T>> subs = needPush.values().iterator();
             while (subs.hasNext()) {
                 Subscriber<T> sub = subs.next();
-                if (sub.getTopics().contains(pubData.topic)) {
+                if (sub.getTopics().contains(pubData.getTopic())) {
                     if (!sub.handlePush(
-                            new Subscriber.DataEvent<>(pair.getKey(), obj, pubData.address, pubData.timestamp))) {
+                            new Subscriber.DataEvent<>(pair.getKey(), obj, pubData.getAddress(), pubData.getTimestamp()))) {
                         subs.remove();
                     }
                 }
@@ -232,7 +232,7 @@ public class DistributedChannelOnKv<T> {
             }
             try {
                 PubData pubData = PubData.unmarshal(pair.getValue());
-                if (pubData.timestamp >= expireTs) {
+                if (pubData.getTimestamp() >= expireTs) {
                     break;
                 }
             } catch (Throwable e) {
@@ -260,16 +260,6 @@ public class DistributedChannelOnKv<T> {
         suspend.set(false);
     }
 
-    public record PubData(byte[] data, long timestamp, String address, String topic) {
-        public byte[] marshal() {
-            return JsonUtils.jsonBytes(this);
-        }
-
-        public static PubData unmarshal(byte[] data) {
-            return JsonUtils.fromJson(data, PubData.class);
-        }
-    }
-
     protected byte[] marshal(T data) {
         return data.toString().getBytes(StandardCharsets.UTF_8);
     }
@@ -288,6 +278,10 @@ public class DistributedChannelOnKv<T> {
                 NetworkUtils.LOCAL_HOST,
                 topic);
         return appendLog.append(pubData.marshal());
+    }
+
+    public AtomicBoolean isLeader() {
+        return this.isLeader;
     }
 
     private static class DistributedLog {

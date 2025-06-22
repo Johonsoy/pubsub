@@ -4,6 +4,7 @@ import org.example.core.DistributedChannelOnKv;
 import org.example.core.Subscriber;
 import org.example.storage.InMemoryKv;
 import org.example.storage.KvInterface;
+import org.example.storage.LongOnKv;
 
 import java.util.Set;
 
@@ -43,10 +44,10 @@ public class Main {
         Thread.sleep(1000);
 
         // 发布消息（由领导者节点执行）
-        if (node1.isLeader.get()) {
+        if (node1.isLeader().get()) {
             node1.publish("news", "重大新闻：今天天气晴朗！");
             node1.publish("sports", "体育新闻：比赛取消。");
-        } else if (node2.isLeader.get()) {
+        } else if (node2.isLeader().get()) {
             node2.publish("news", "重大新闻：今天天气晴朗！");
             node2.publish("sports", "体育新闻：比赛取消。");
         }
