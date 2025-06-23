@@ -38,17 +38,9 @@ public class Main {
                 },
                 Set.of("news"));
 
-        // 等待领导者选举完成
-        Thread.sleep(1000);
 
-        // 发布消息（由领导者节点执行）
-        if (node1.isLeader().get()) {
-            node1.publish("news", "重大新闻：今天天气晴朗！");
-            node1.publish("sports", "体育新闻：比赛取消。");
-        } else if (node2.isLeader().get()) {
-            node2.publish("news", "重大新闻：今天天气晴朗！");
-            node2.publish("sports", "体育新闻：比赛取消。");
-        }
+        node1.publish("news", "重大新闻：今天天气晴朗！");
+        node1.publish("sports", "体育新闻：比赛取消。");
 
         // 等待消息推送
         Thread.sleep(1000);

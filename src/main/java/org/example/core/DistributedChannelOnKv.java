@@ -19,7 +19,6 @@ public class DistributedChannelOnKv<T> {
     private final AppendLog appendLog;
     private final Map<String, Subscriber<T>> subscriberMap = new ConcurrentHashMap<>();
     private final long maxReservedSeconds;
-    private final AtomicBoolean isLeader = new AtomicBoolean(false);
     private final AtomicBoolean suspend = new AtomicBoolean(false);
     private final ScheduledFuture<?> pushFuture;
     private final ScheduledFuture<?> gcFuture;
@@ -167,9 +166,6 @@ public class DistributedChannelOnKv<T> {
             gcFuture.cancel(false);
         }
         pushFuture.cancel(false);
-        if (isLeader.get()) {
-            kv.delete(keyPrefix + ":leader");
-        }
     }
 
     private void safeGc() {
@@ -186,9 +182,6 @@ public class DistributedChannelOnKv<T> {
     }
 
     public void gcUntil(long expireTs) {
-        if (!isLeader.get()) {
-            return;
-        }
         long deleteTo = 0;
         long endVersion = appendLog.getEndVersion();
         Iterator<Pair<Long, byte[]>> iterator = appendLog.iterator();
@@ -236,18 +229,11 @@ public class DistributedChannelOnKv<T> {
     }
 
     public long publish(String topic, T data) {
-        if (!isLeader.get()) {
-            throw new IllegalStateException("只有领导者节点可以发布消息");
-        }
         PubData pubData = new PubData(
                 marshal(data),
                 System.currentTimeMillis(),
                 NetworkUtils.LOCAL_HOST,
                 topic);
         return appendLog.append(pubData.marshal());
-    }
-
-    public AtomicBoolean isLeader() {
-        return this.isLeader;
     }
 }
