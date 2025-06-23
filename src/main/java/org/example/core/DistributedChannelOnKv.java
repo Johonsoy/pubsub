@@ -23,8 +23,6 @@ public class DistributedChannelOnKv<T> {
     private final AtomicBoolean suspend = new AtomicBoolean(false);
     private final ScheduledFuture<?> pushFuture;
     private final ScheduledFuture<?> gcFuture;
-    private final ScheduledFuture<?> leaderElectionFuture;
-    private final String nodeId = UUID.randomUUID().toString();
     private static final ScheduledExecutorService executorService =
             new ScheduledThreadPoolExecutor(2, new NamedThreadFactory("DistributedChannelOnKv", true));
     private final KvInterface kv;
@@ -38,42 +36,11 @@ public class DistributedChannelOnKv<T> {
 
         this.pushFuture = executorService.scheduleWithFixedDelay(
                 this::safePush, 0, checkIntervalMillis, TimeUnit.MILLISECONDS);
-        this.leaderElectionFuture = executorService.scheduleWithFixedDelay(
-                this::runLeaderElection, 0, 5, TimeUnit.SECONDS);
         if (autoGc) {
             this.gcFuture = executorService.scheduleWithFixedDelay(
                     this::safeGc, 0, 30, TimeUnit.SECONDS);
         } else {
             this.gcFuture = null;
-        }
-    }
-
-    private void runLeaderElection() {
-        try {
-            String leaderKey = keyPrefix + ":leader";
-            long currentTime = System.currentTimeMillis();
-            String leaseValue = nodeId + ":" + (currentTime + 10000);
-
-            if (kv.setIfAbsent(leaderKey, leaseValue.getBytes())) {
-                isLeader.set(true);
-                LOGGER.info("节点 {} 成为领导者", nodeId);
-            } else {
-                byte[] currentLeader = kv.get(leaderKey);
-                if (currentLeader != null) {
-                    String[] parts = new String(currentLeader).split(":");
-                    if (parts.length == 2 && Long.parseLong(parts[1]) < currentTime) {
-                        if (kv.compareAndSet(leaderKey, currentLeader, leaseValue.getBytes())) {
-                            isLeader.set(true);
-                            LOGGER.info("节点 {} 接管领导者角色", nodeId);
-                        }
-                    }
-                }
-                if (!isLeader.get()) {
-                    isLeader.set(false);
-                }
-            }
-        } catch (Exception e) {
-            LOGGER.error("节点 {} 领导者选举失败", nodeId, e);
         }
     }
 
@@ -200,7 +167,6 @@ public class DistributedChannelOnKv<T> {
             gcFuture.cancel(false);
         }
         pushFuture.cancel(false);
-        leaderElectionFuture.cancel(false);
         if (isLeader.get()) {
             kv.delete(keyPrefix + ":leader");
         }
